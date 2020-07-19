@@ -1,43 +1,38 @@
-const http = require("http");
-const url = require("url");
+const http          = require("http");
+const url           = require("url");
 const StringDecoder = require("string_decoder").StringDecoder;
 
 const libFile = require("./lib/data");
-const config = require("./config");
-const routes = require("./routes/routes");
+const config  = require("./config") || { };
+const routes  = require("./routes/routes") || { };
 
 const Server = http.createServer((req, res) => {
   try {
     // some important data of req
-    const path = url.parse(req.url, true);
+    const path     = url.parse(req.url, true);
     const pathTrim = path.pathname.replace(/^\/|\/$|\?.+/g, "");
     const pathWDir = (config.baseDir || "root") + "/" + pathTrim;
-    const query = path.query;
-    const headers = req.headers;
-    const method = req.method.toLowerCase();
-    const decoder = new StringDecoder("utf-8");
-    var buffer = "";
+    const query    = path.query;
+    const headers  = req.headers;
+    const method   = req.method.toLowerCase();
+    const decoder  = new StringDecoder("utf-8");
+    var buffer     = "";
 
-    req.on("data", (data) => {
-      buffer += decoder.write(data);
-    });
-
-    var data_ = {
-      path: pathTrim,
-      query,
-      headers,
-      method,
-    };
+    req.on("data", (data) => { buffer += decoder.write(data); });
 
     req.on("end", () => {
       buffer += decoder.end();
-      data_.payload = JSON.parse(buffer)
-      libFile.readFile(pathWDir, async (err, data) => {
+      var data_ = {
+        path: pathTrim,
+        query,
+        headers,
+        method,
+        payload: JSON.parse(buffer)
+      };
+
+      libFile.readFile(pathWDir, (err, data) => {
         if (err == "nofile") {
-          const route =
-            typeof routes[data_.path] != "undefined"
-              ? routes[data_.path]
-              : null;
+          const route = typeof routes[data_.path] != "undefined" ? routes[data_.path] : null;
 
           if (route == null) {
             res.writeHead(404);
@@ -45,8 +40,7 @@ const Server = http.createServer((req, res) => {
             return false;
           }
 
-          const routeMethod =
-            typeof route[method] != "undefined" ? route[method] : null;
+          const routeMethod = typeof route[method] != "undefined" ? route[method] : null;
 
           if (routeMethod == null) {
             res.writeHead(405);
@@ -56,24 +50,24 @@ const Server = http.createServer((req, res) => {
 
           var writeHead = false;
           var ended = false;
-          const resObject = {
-            writeHead: (status, headers) => {
-              writeHead = true;
-              res.writeHead(status, headers);
-            },
-            end: (data) => {
-              ended = true;
-              res.end(data);
-            },
-          };
 
-          await routeMethod(data_, resObject);
-          if (!writeHead) res.writeHead(200);
-          if (!ended) res.end();
+          routeMethod(data_, (bodyToSend = {}, options = {}) => {
+            try {
+              if(typeof(bodyToSend) != 'object') throw new Error('body must be a json')
+              const status            = typeof options.status == "number" ? options.status : 200;
+              const headers           = typeof options.headers == "object" ? options.headers : {};
+              headers["Content-Type"] = typeof headers["Content-Type"] == "string" ? headers["Content-Type"] : "application/json";
+
+              res.writeHead(status, headers);
+              res.end(JSON.stringify(bodyToSend));
+            } catch (error) {
+              res.writeHead(500)
+              res.end(error.toString())
+            }
+            
+          });
         } else {
-          const extension = pathWDir.match(/\.(.+)/)
-            ? pathWDir.match(/\.(.+)/)[0].replace(".", "")
-            : null;
+          const extension = pathWDir.match(/\.(.+)/) ? pathWDir.match(/\.(.+)/)[0].replace(".", "") : null;
           var ContentType = "";
           if (extension == "html" || extension == "htm") {
             ContentType = "text/html";
