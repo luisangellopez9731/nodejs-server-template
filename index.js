@@ -31,6 +31,7 @@ const Server = http.createServer((req, res) => {
 
     req.on("end", () => {
       buffer += decoder.end();
+      data_.payload = JSON.parse(buffer)
       libFile.readFile(pathWDir, async (err, data) => {
         if (err == "nofile") {
           const route =
