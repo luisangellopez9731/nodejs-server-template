@@ -2,5 +2,7 @@
     "name": "template",
     "scripts": {
         "start": "node index.js"
+    },
+    "dependencies": {
     }
 }

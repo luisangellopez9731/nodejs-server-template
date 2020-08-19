@@ -31,7 +31,7 @@ const environmentProvider = 'NODE_ENV'
 const environments = { }
 
 environments.staging = {
-    port: 3000,
+    port: 3002,
     envName: 'staging',
     baseDir: 'root'
 }
