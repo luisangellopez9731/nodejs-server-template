@@ -1,4 +1,4 @@
-const http = require("http");
+import * as http from "http";
 import * as url from "url";
 import { StringDecoder } from "string_decoder";
 import { createServer, ServerResponse } from 'http';
@@ -89,6 +89,7 @@ const checkpathForApiOrStatic = (path: string, routes: any, pathDir: string) => 
 export const start = (port: Number, callback: () => void): void => {
   Server = createServer(async (req, res) => {
     try {
+      console.log(routes)
       const path = url.parse(req.url || '', true);
       const pathTrim = (path.pathname || '').replace(/^\/|\/$|\?.+/g, "");
       const pathDir = pathTrim;
@@ -98,7 +99,7 @@ export const start = (port: Number, callback: () => void): void => {
       const decoder = new StringDecoder("utf-8");
       var buffer = "";
       const isStatic = pathTrim.indexOf('.') != -1 ? true : false;
-
+      console.log(pathTrim)
       req.on("data", (data) => {
         buffer += decoder.write(data);
       });
@@ -114,6 +115,7 @@ export const start = (port: Number, callback: () => void): void => {
           payload: bufferToJson || {},
         };
 
+        console.log(isStatic)
         if (isStatic) {
           const path = typeof baseDir === 'undefined' ? data.path : `${baseDir}/${data.path}`;
           readFile(path, (err, data_) => {
@@ -124,7 +126,9 @@ export const start = (port: Number, callback: () => void): void => {
             }
           });
         } else {
-          const route: routeUse | null = typeof routes[path.pathname || ''] != "undefined" ? routes[path.pathname || ''] : null;
+          
+          const route: routeUse | null = typeof routes[data.path || ''] != "undefined" ? routes[data.path || ''] : null;
+          console.log(route, routes)
           serveApiEndPoint(route, data, res);
         }
       });

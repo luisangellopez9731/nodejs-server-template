@@ -1,4 +1,4 @@
-import {getConfig} from './enviroment';
+import {getConfig} from './environment';
 import { setBaseDir, start } from './lib/server';
 
 const config = getConfig();
