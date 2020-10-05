@@ -1,13 +1,13 @@
-const lib = {};
+import { routeDef, routeUse } from './interfaces';
 
-lib.jsonTryParse = (str) => {
+export const jsonTryParse = (str: string): string => {
   try {
     return JSON.parse(str);
-  } catch (e) {}
+  } catch (e) { return '' }
 };
 
-lib.formatRoutes = (routesDef) => {
-  let routesPlusBaseDir = {};
+export const formatRoutes = (routesDef: routeDef) => {
+  let routesPlusBaseDir:{[key:string]: routeUse} = {};
   const baseDir =
     typeof routesDef.baseDir === "string" && routesDef.baseDir.length > 0
       ? `${routesDef.baseDir}/`
@@ -20,5 +20,3 @@ lib.formatRoutes = (routesDef) => {
 
   return routesPlusBaseDir;
 };
-
-module.exports = lib;
